@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İETT Geçmiş Seferler</title>
+    <script>
+        async function fetchData() {
+            const tarih = document.getElementById('tarih').value;
+            const hatKoduFilter = document.getElementById('hatKoduFilter').value;
+            const guzergahKoduFilter = document.getElementById('guzergahKoduFilter').value;
+            const gorevIdFilter = document.getElementById('gorevIdFilter').value;
+            const kapıNumaraFilter = document.getElementById('kapiNumaraFilter').value;
+            const gorevDurumFilter = document.getElementById('gorevDurumFilter').value;
+            const bitisZamaniFilter = document.getElementById('bitisZamaniFilter').value;
+            const duzenlenenBaslamaZamaniFilter = document.getElementById('duzenlenenBaslamaZamaniFilter').value;
+
+            const soapMessage = `
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <tem:GetIettArsivGorev_XML>
+         <tem:Tarih>${tarih}</tem:Tarih>
+      </tem:GetIettArsivGorev_XML>
+   </soapenv:Body>
+</soapenv:Envelope>`;
+
+            try {
+                const response = await fetch('https://cors-anywhere.herokuapp.com/https://api.ibb.gov.tr/iett/ibb/ibb360.asmx', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/xml; charset=utf-8',
+                        'SOAPAction': 'http://tempuri.org/GetIettArsivGorev_XML'
+                    },
+                    body: soapMessage
+                });
+
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, 'text/xml');
+                const rows = xmlDoc.getElementsByTagName('Table');
+
+                let tableContent = `<tr>
+                    <th>ID</th>
+                    <th>Görev ID</th>
+                    <th>Kapı Numarası</th>
+                    <th>Hat Kodu</th>
+                    <th>Güzergah Kodu</th>
+                    <th>Görev Durumu</th>
+                    <th>Başlama Zamanı</th>
+                    <th>Düzenlenen Başlama Zamanı</th>
+                    <th>Bitiş Zamanı</th>
+                </tr>`;
+
+                for (let row of rows) {
+                    const id = row.getElementsByTagName('ID')[0]?.textContent || 'N/A';
+                    const hatKodu = row.getElementsByTagName('SHATKODU')[0]?.textContent || 'N/A';
+                    const guzergahKodu = row.getElementsByTagName('SGUZERGAHKODU')[0]?.textContent || 'N/A';
+                    const gorevId = row.getElementsByTagName('NGOREVID')[0]?.textContent || 'N/A';
+                    const kapıNumara = row.getElementsByTagName('SKAPINUMARA')[0]?.textContent || 'N/A';
+                    const gorevDurum = row.getElementsByTagName('SGOREVDURUM')[0]?.textContent || 'N/A';
+                    const baslamaZamani = row.getElementsByTagName('DTPLANLANANBASLANGICZAMANI')[0]?.textContent || 'N/A';
+                    const duzenlenenBaslamaZamani = row.getElementsByTagName('DTDUZENLENENBASLANGICZAMANI')[0]?.textContent || 'N/A';
+                    const bitisZamani = row.getElementsByTagName('DTBITISZAMANI')[0]?.textContent || 'N/A';
+
+                    if ((hatKoduFilter === '' || hatKodu.includes(hatKoduFilter)) &&
+                        (guzergahKoduFilter === '' || guzergahKodu.includes(guzergahKoduFilter)) &&
+                        (gorevIdFilter === '' || gorevId.includes(gorevIdFilter)) &&
+                        (kapıNumaraFilter === '' || kapıNumara.includes(kapıNumaraFilter)) &&
+                        (gorevDurumFilter === '' || gorevDurum.includes(gorevDurumFilter)) &&
+                        (bitisZamaniFilter === '' || bitisZamani.includes(bitisZamaniFilter)) &&
+                        (duzenlenenBaslamaZamaniFilter === '' || duzenlenenBaslamaZamani.includes(duzenlenenBaslamaZamaniFilter))) {
+                        tableContent += `<tr>
+                            <td>${id}</td>
+                            <td>${gorevId}</td>
+                            <td>${kapıNumara}</td>
+                            <td>${hatKodu}</td>
+                            <td>${guzergahKodu}</td>
+                            <td>${gorevDurum}</td>
+                            <td>${baslamaZamani}</td>
+                            <td>${duzenlenenBaslamaZamani}</td>
+                            <td>${bitisZamani}</td>
+                        </tr>`;
+                    }
+                }
+
+                document.getElementById('results').innerHTML = tableContent;
+            } catch (error) {
+                console.error('Hata:', error);
+                document.getElementById('results').innerHTML = '<tr><td colspan="9">Bir hata oluştu.</td></tr>';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>İETT Geçmiş Seferler</h1>
+    <form onsubmit="event.preventDefault(); fetchData();">
+        <label for="tarih">Tarih (YYYYMMDD):</label>
+        <input type="text" id="tarih" name="tarih" required>
+        <br>
+        <label for="hatKoduFilter">Hat Kodu Filtresi:</label>
+        <input type="text" id="hatKoduFilter" name="hatKoduFilter">
+        <br>
+        <label for="guzergahKoduFilter">Güzergah Kodu Filtresi:</label>
+        <input type="text" id="guzergahKoduFilter" name="guzergahKoduFilter">
+        <br>
+        <label for="gorevIdFilter">Görev ID Filtresi:</label>
+        <input type="text" id="gorevIdFilter" name="gorevIdFilter">
+        <br>
+        <label for="kapiNumaraFilter">Kapı Numarası Filtresi:</label>
+        <input type="text" id="kapiNumaraFilter" name="kapiNumaraFilter">
+        <br>
+        <label for="gorevDurumFilter">Görev Durumu Filtresi:</label>
+        <input type="text" id="gorevDurumFilter" name="gorevDurumFilter">
+        <br>
+        <label for="bitisZamaniFilter">Bitiş Zamanı Filtresi:</label>
+        <input type="text" id="bitisZamaniFilter" name="bitisZamaniFilter">
+        <br>
+        <label for="duzenlenenBaslamaZamaniFilter">Düzenlenen Başlama Zamanı Filtresi:</label>
+        <input type="text" id="duzenlenenBaslamaZamaniFilter" name="duzenlenenBaslamaZamaniFilter">
+        <br>
+        <button type="submit">Sorgula</button>
+    </form>
+    <h2>Sonuçlar</h2>
+    <table id="results" border="1">
+        <tr>
+            <th>ID</th>
+            <th>Görev ID</th>
+            <th>Kapı Numarası</th>
+            <th>Hat Kodu</th>
+            <th>Güzergah Kodu</th>
+            <th>Görev Durumu</th>
+            <th>Başlama Zamanı</th>
+            <th>Düzenlenen Başlama Zamanı</th>
+            <th>Bitiş Zamanı</th>
+        </tr>
+    </table>
+</body>
+</html>
