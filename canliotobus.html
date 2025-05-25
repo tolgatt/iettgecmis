@@ -59,15 +59,13 @@
           body: soapBody
         });
 
-        const text = await response.text();
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(text, "text/xml");
-        const jsonText = xmlDoc.getElementsByTagName("GetHatOtoKonum_jsonResult")[0].textContent;
-        const data = JSON.parse(jsonText);
+        if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || "Sunucu hatası");
+        }
 
-        if (!Array.isArray(data)) {
-          alert("Geçerli bir veri bulunamadı.");
-          return;
+        const data = await response.json();
+        console.log("Otobüs verisi:", data);
         }
 
         data.forEach(bus => {
