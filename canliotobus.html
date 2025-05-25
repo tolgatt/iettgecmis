@@ -1,90 +1,46 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>İETT Otobüs Konumları</title>
+  <meta charset="UTF-8" />
+  <title>Otobüs Konumları</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #map { height: 600px; margin-top: 15px; }
-    input, button { padding: 8px; margin: 5px 0; }
+    #map { height: 100vh; }
   </style>
 </head>
 <body>
-  <h2>İETT Hat Otobüs Konumları</h2>
-  <input type="text" id="hatKodu" placeholder="Hat Kodu (örn: 14BK)">
-  <button onclick="sorgula()">Sorgula</button>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([41.015, 28.979], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
+    const map = L.map("map").setView([41.0082, 28.9784], 11);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
     }).addTo(map);
 
-    let markers = [];
-
-    function temizleHarita() {
-      markers.forEach(marker => map.removeLayer(marker));
-      markers = [];
-    }
-
-    async function sorgula() {
-      const hat = document.getElementById('hatKodu').value.trim();
-      if (!hat) {
-        alert("Lütfen bir hat kodu girin.");
-        return;
-      }
-
-      temizleHarita();
-
-      const soapData = `
-        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
-          <soapenv:Header/>
-          <soapenv:Body>
-            <tem:GetHatOtoKonum_json>
-              <tem:HatKodu>${hat}</tem:HatKodu>
-            </tem:GetHatOtoKonum_json>
-          </soapenv:Body>
-        </soapenv:Envelope>`;
-
+    async function loadBusLocations(hatNo) {
       try {
-        const res = await fetch("https://703df10b-a9f8-4235-a338-e8c5d1282220-00-2pxsdwdz7lkkz.spock.replit.dev/proxy", {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/xml;charset=UTF-8",
-            "SOAPAction": "http://tempuri.org/GetHatOtoKonum_json"
-          },
-          body: soapData
-        });
+        const response = await fetch(`https://703df10b-a9f8-4235-a338-e8c5d1282220-00-2pxsdwdz7lkkz.spock.replit.dev/api/bus/${hatNo}`);
+        const data = await response.json();
 
-        const data = await res.json(); // DÜZELTİLDİ
-        const otobusler = data;        // DÜZELTİLDİ
-
-        if (!Array.isArray(otobusler) || otobusler.length === 0) {
-          alert("Otobüs konumu bulunamadı.");
-          return;
-        }
-
-        otobusler.forEach(bus => {
-          const marker = L.marker([bus.enlem, bus.boylam]).addTo(map);
+        data.forEach(bus => {
+          const lat = parseFloat(bus.enlem);
+          const lng = parseFloat(bus.boylam);
+          const marker = L.marker([lat, lng]).addTo(map);
           marker.bindPopup(`
-            <b>${bus.kapino}</b><br>
-            Hat: ${bus.hatad}<br>
+            <strong>${bus.kapino}</strong><br>
+            Hat: ${bus.hatkodu}<br>
             Yön: ${bus.yon}<br>
-            Son Görülme: ${bus.son_konum_zamani}
+            Zaman: ${bus.son_konum_zamani}
           `);
-          markers.push(marker);
         });
-
-        map.setView([otobusler[0].enlem, otobusler[0].boylam], 13);
-
       } catch (err) {
-        console.error("Hata:", err);
-        alert("Veri alınamadı.");
+        console.error("Otobüs verileri alınamadı:", err);
       }
     }
+
+    loadBusLocations("14BK"); // Örnek hat
   </script>
 </body>
 </html>
