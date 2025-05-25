@@ -20,7 +20,7 @@
   <script>
     async function sorgula() {
       const hatNo = document.getElementById("hatNo").value.trim().toUpperCase();
-      const url = `https://api.ibb.gov.tr/iett/FiloDurum/SeferGerceklesme.asmx/GetHatOtoKonum_json?HatNo=${hatNo}`;
+      const url = `https://cors-anywhere.herokuapp.com/https://api.ibb.gov.tr/iett/FiloDurum/SeferGerceklesme.asmx/GetHatOtoKonum_json?HatNo=${hatNo}`;
       const container = document.getElementById("sonuclar");
 
       container.innerHTML = "Yükleniyor...";
