@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>İETT Otobüs Konumları</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, button { padding: 8px; font-size: 16px; }
+    #sonuclar { margin-top: 20px; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Otobüs Hattı Konumları</h1>
+  <input type="text" id="hatNo" placeholder="Hat No (örn: 34AS)">
+  <button onclick="sorgula()">Sorgula</button>
+  <div id="sonuclar"></div>
+
+  <script>
+    async function sorgula() {
+      const hatNo = document.getElementById("hatNo").value.trim().toUpperCase();
+      const url = `https://api.ibb.gov.tr/iett/FiloDurum/SeferGerceklesme.asmx/GetHatOtoKonum_json?HatNo=${hatNo}`;
+      const container = document.getElementById("sonuclar");
+
+      container.innerHTML = "Yükleniyor...";
+
+      try {
+        const response = await fetch(url);
+        const text = await response.text();
+        const json = JSON.parse(text);
+
+        if (!json || json.length === 0) {
+          container.innerHTML = `<p><strong>${hatNo}</strong> hattına ait araç bulunamadı.</p>`;
+          return;
+        }
+
+        let html = `<h2>${hatNo} hattındaki otobüsler:</h2><ul>`;
+        json.forEach(arac => {
+          html += `<li>
+            Kapı No: ${arac.kapino} | Konum: (${arac.enlem}, ${arac.boylam})<br>
+            Son Konum Zamanı: ${arac.son_konum_zamani}
+          </li>`;
+        });
+        html += `</ul>`;
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = `<p>Bir hata oluştu: ${e.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
