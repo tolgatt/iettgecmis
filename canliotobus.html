@@ -45,42 +45,6 @@
       markers = [];
     }
 
-    async function getDurakAdi(durakKodu) {
-      const soapBody = `
-        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
-           <soapenv:Header/>
-           <soapenv:Body>
-              <tem:GetDurak_XML>
-                 <tem:DurakKodu>${durakKodu}</tem:DurakKodu>
-              </tem:GetDurak_XML>
-           </soapenv:Body>
-        </soapenv:Envelope>`;
-
-      try {
-        const response = await fetch(
-          "https://e7f44acc-4cc7-4eb8-9a6d-64b8221f8e9a-00-10jlz0zfni4bf.pike.replit.dev/proxy",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "text/xml; charset=utf-8",
-              SOAPAction: "http://tempuri.org/GetDurak_XML",
-            },
-            body: soapBody,
-          }
-        );
-
-        const text = await response.text();
-
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(text, "text/xml");
-        const durakAdiNode = xmlDoc.getElementsByTagName("SDURAKADI")[0];
-        return durakAdiNode ? durakAdiNode.textContent : durakKodu; // Bulamazsa kodu döndür
-      } catch (err) {
-        console.error("Durak adı alınırken hata:", err);
-        return durakKodu; // Hata olursa kodu döndür
-      }
-    }
-
     async function sorgula() {
       const hat = document.getElementById("hatKodu").value.trim();
       if (!hat) {
@@ -90,7 +54,7 @@
 
       temizleHarita();
 
-      const soapData = `
+      const soapData = 
         <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
           <soapenv:Header/>
           <soapenv:Body>
@@ -99,7 +63,7 @@
             </tem:GetHatOtoKonum_json>
           </soapenv:Body>
         </soapenv:Envelope>
-      `;
+      ;
 
       try {
         const res = await fetch(
@@ -114,15 +78,18 @@
           }
         );
 
-        const text = await res.text();
+        const text = await res.text(); // JSON değil, XML string gelecek
 
+        // XML parse
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(text, "text/xml");
 
+        // JSON stringi XML içinden al
         const jsonString = xmlDoc
           .getElementsByTagName("GetHatOtoKonum_jsonResult")[0]
           .textContent;
 
+        // JSON stringi objeye çevir
         const otobusler = JSON.parse(jsonString);
 
         if (!Array.isArray(otobusler) || otobusler.length === 0) {
@@ -130,25 +97,15 @@
           return;
         }
 
-        // Tüm durak kodları için durak adlarını çek
-        for (const bus of otobusler) {
-          if (bus.yakinDurakKodu) {
-            bus.yakinDurakAdi = await getDurakAdi(bus.yakinDurakKodu);
-          } else {
-            bus.yakinDurakAdi = "Bilinmiyor";
-          }
-        }
-
         otobusler.forEach((bus) => {
           const marker = L.marker([bus.enlem, bus.boylam]).addTo(map);
-          marker.bindPopup(`
+          marker.bindPopup(
             <b>${bus.kapino}</b><br>
             Hat: ${bus.hatad}<br>
             Yön: ${bus.yon}<br>
             Güzergah Kodu: ${bus.guzergahkodu}<br>
-            Son Görülme: ${bus.son_konum_zamani}<br>
-            Yakın Durak: ${bus.yakinDurakAdi}
-          `);
+            Son Görülme: ${bus.son_konum_zamani}
+          );
           markers.push(marker);
         });
 
