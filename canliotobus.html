@@ -59,8 +59,12 @@
           body: soapData
         });
 
-        const data = await response.json(); // direkt JSON
-        console.log(data);
+        const data = await res.json(); // DÜZELTİLDİ
+        const otobusler = data;        // DÜZELTİLDİ
+
+        if (!Array.isArray(otobusler) || otobusler.length === 0) {
+          alert("Otobüs konumu bulunamadı.");
+          return;
         }
 
         otobusler.forEach(bus => {
@@ -74,9 +78,7 @@
           markers.push(marker);
         });
 
-        if (otobusler.length > 0) {
-          map.setView([otobusler[0].enlem, otobusler[0].boylam], 13);
-        }
+        map.setView([otobusler[0].enlem, otobusler[0].boylam], 13);
 
       } catch (err) {
         console.error("Hata:", err);
