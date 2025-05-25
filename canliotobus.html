@@ -59,17 +59,8 @@
           body: soapData
         });
 
-        const responseText = await res.text();
-        const jsonString = new window.DOMParser()
-          .parseFromString(responseText, "text/xml")
-          .getElementsByTagName("GetHatOtoKonum_jsonResult")[0]
-          .textContent;
-
-        const otobusler = JSON.parse(jsonString);
-
-        if (!Array.isArray(otobusler)) {
-          alert("Veri bulunamadı veya geçersiz.");
-          return;
+        const data = await response.json(); // direkt JSON
+        console.log(data);
         }
 
         otobusler.forEach(bus => {
