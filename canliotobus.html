@@ -1,37 +1,52 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>İETT Otobüs Konumları</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #map { height: 600px; margin-top: 15px; }
-    input, button { padding: 8px; margin: 5px 0; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    #map {
+      height: 600px;
+      margin-top: 15px;
+    }
+
+    input,
+    button {
+      padding: 8px;
+      margin: 5px 0;
+    }
   </style>
 </head>
 <body>
   <h2>İETT Hat Otobüs Konumları</h2>
-  <input type="text" id="hatKodu" placeholder="Hat Kodu (örn: 14BK)">
+  <input type="text" id="hatKodu" placeholder="Hat Kodu (örn: 14BK)" />
   <button onclick="sorgula()">Sorgula</button>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([41.015, 28.979], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
+    const map = L.map("map").setView([41.015, 28.979], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap",
     }).addTo(map);
 
     let markers = [];
 
     function temizleHarita() {
-      markers.forEach(marker => map.removeLayer(marker));
+      markers.forEach((marker) => map.removeLayer(marker));
       markers = [];
     }
 
     async function sorgula() {
-      const hat = document.getElementById('hatKodu').value.trim();
+      const hat = document.getElementById("hatKodu").value.trim();
       if (!hat) {
         alert("Lütfen bir hat kodu girin.");
         return;
@@ -47,27 +62,42 @@
               <tem:HatKodu>${hat}</tem:HatKodu>
             </tem:GetHatOtoKonum_json>
           </soapenv:Body>
-        </soapenv:Envelope>`;
+        </soapenv:Envelope>
+      `;
 
       try {
-        const res = await fetch("https://703df10b-a9f8-4235-a338-e8c5d1282220-00-2pxsdwdz7lkkz.spock.replit.dev/proxy", {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/xml;charset=UTF-8",
-            "SOAPAction": "http://tempuri.org/GetHatOtoKonum_json"
-          },
-          body: soapData
-        });
+        const res = await fetch(
+          "https://703df10b-a9f8-4235-a338-e8c5d1282220-00-2pxsdwdz7lkkz.spock.replit.dev/proxy",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/xml;charset=UTF-8",
+              SOAPAction: "http://tempuri.org/GetHatOtoKonum_json",
+            },
+            body: soapData,
+          }
+        );
 
-        const data = await res.json(); // DÜZELTİLDİ
-        const otobusler = data;        // DÜZELTİLDİ
+        const text = await res.text(); // JSON değil, XML string gelecek
+
+        // XML parse
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, "text/xml");
+
+        // JSON stringi XML içinden al
+        const jsonString = xmlDoc
+          .getElementsByTagName("GetHatOtoKonum_jsonResult")[0]
+          .textContent;
+
+        // JSON stringi objeye çevir
+        const otobusler = JSON.parse(jsonString);
 
         if (!Array.isArray(otobusler) || otobusler.length === 0) {
           alert("Otobüs konumu bulunamadı.");
           return;
         }
 
-        otobusler.forEach(bus => {
+        otobusler.forEach((bus) => {
           const marker = L.marker([bus.enlem, bus.boylam]).addTo(map);
           marker.bindPopup(`
             <b>${bus.kapino}</b><br>
@@ -79,7 +109,6 @@
         });
 
         map.setView([otobusler[0].enlem, otobusler[0].boylam], 13);
-
       } catch (err) {
         console.error("Hata:", err);
         alert("Veri alınamadı.");
