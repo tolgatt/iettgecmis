@@ -54,6 +54,10 @@
 
       temizleHarita();
 
+      sorgula();
+
+			setInterval(sorgula, 60000);
+      
       const soapData = `
         <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
           <soapenv:Header/>
