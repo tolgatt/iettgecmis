@@ -100,9 +100,8 @@
         otobusler.forEach((bus) => {
           const marker = L.marker([bus.enlem, bus.boylam]).addTo(map);
           marker.bindPopup(`
-          	<b>${hat}<br>
-            ${bus.kapino}<br>
-            ${bus.yon} YÖNÜ</b><br>
+            <b>${hat} - ${bus.yon} YÖNÜ</b><br>
+            Kapı no: ${bus.kapino}<br>
             Güzergah kodu: ${bus.guzergahkodu}<br>
             Son konum: ${bus.son_konum_zamani}<br>
             <a href="https://arac.iett.gov.tr/${bus.kapino}" target="_blank">Otobüs bilgileri</a>
